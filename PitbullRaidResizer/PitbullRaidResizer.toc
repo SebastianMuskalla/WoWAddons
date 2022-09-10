@@ -1,0 +1,7 @@
+## Interface: 80100
+## Title: PitbullRaidResizer
+## Author: SM
+## Notes: Resize Tank and Healer frames.
+
+libs.xml
+PitbullRaidResizer.lua

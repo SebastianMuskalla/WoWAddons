@@ -1,0 +1,11 @@
+﻿## Interface: 80100
+## Title: Broker_RaidCount
+## Notes: Tracks the raid member / role count
+## Author: SM
+## Version: 8.0.1-0
+
+libs\LibStub\LibStub.lua
+libs\CallbackHandler-1.0\CallbackHandler-1.0.xml
+libs\LibDataBroker-1.1\LibDataBroker-1.1.lua
+
+Broker_RaidCount.lua

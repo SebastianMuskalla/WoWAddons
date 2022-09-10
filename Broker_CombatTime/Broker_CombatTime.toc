@@ -1,0 +1,9 @@
+## Interface: 80100
+## Title: Broker_CombatTime
+## Description: Broker for time in combat
+## Notes: Broker for time in combat
+## Author: SM
+## Credits: Based on CombatTime by oscarucb
+## Version: 80100
+
+Broker_CombatTime.lua

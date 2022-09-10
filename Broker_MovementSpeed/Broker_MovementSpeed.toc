@@ -1,0 +1,7 @@
+## Interface: 80100
+## Title: Broker_MovementSpeed
+## Notes: Broker for the current movement speed
+## Author: SM
+## Version: 80100
+
+Broker_MovementSpeed.lua
