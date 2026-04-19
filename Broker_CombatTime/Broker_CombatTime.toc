@@ -1,9 +1,12 @@
-## Interface: 80100
+## Interface: 120000
 ## Title: Broker_CombatTime
-## Description: Broker for time in combat
-## Notes: Broker for time in combat
-## Author: SM
-## Credits: Based on CombatTime by oscarucb
-## Version: 80100
+## Version: 1.0
+## Author: Sebastian Muskalla
+## Notes: Shows time in combat.
+## SavedVariables: BrokerCombatTime
+
+libs/LibStub.lua
+libs/CallbackHandler-1.0.lua
+libs/LibDataBroker-1.1.lua
 
 Broker_CombatTime.lua

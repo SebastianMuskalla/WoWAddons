@@ -1,164 +1,177 @@
 --
+-- Broker
+--
+local addonName, namespace = ...
+local ldb = nil
+local hiddenFrame = CreateFrame("Frame")
+
+
+--
 -- Settings
 --
 
-local start_time   = 0
-local elapsed_time = 0.0
-local combatzone   = nil
+-- `true` for debug output
+local debugMode                        = false
 
-local color_red   = 1
-local color_green = 1
-local color_blue  = 1
+local outOfCombatText                  = "ooc"
+local inCombatPrefix                   = "ct "
 
-local SEC_TO_MINUTE_FACTOR = 1/60;
-local SEC_TO_HOUR_FACTOR = SEC_TO_MINUTE_FACTOR*SEC_TO_MINUTE_FACTOR;
+local chatPrefix                       = "CombatTime: "
 
-local LDB
-local LDBo
+-- color of text (between 0 and 255 per channel)
+local colorRed                         = 255
+local colorGreen                       = 255
+local colorBlue                        = 255
 
---
--- Register events
---
-
-local hiddenFrame = CreateFrame("Frame")
-
-hiddenFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
-hiddenFrame:RegisterEvent("PLAYER_REGEN_DISABLED")
-hiddenFrame:RegisterEvent("ADDON_LOADED");
+-- threshold to report long combat (in seconds) or `nil` to disable
+local reportLongCombatThresholdSeconds = 60
 
 --
--- Debug
+-- State
 --
+local inCombat                         = false
+local startTimestamp                   = 0
+local accumulatedElapsedTime           = 0.0
 
-local debug_mode = false
-
-local function chatMsg(msg)
-    DEFAULT_CHAT_FRAME:AddMessage("Broker_CombatTime: "..msg)
+--
+-- Helpers
+--
+local function out(msg)
+    if (chatPrefix) then
+        DEFAULT_CHAT_FRAME:AddMessage(chatPrefix .. msg)
+    else
+        DEFAULT_CHAT_FRAME:AddMessage(msg)
+    end
 end
 
 local function debug(msg)
-    if debug_mode then
-        chatMsg(msg)
+    if debugMode then
+        out("[DEBUG] "..msg)
+    end
+end
+
+local function splitDuration(duration)
+    if not duration then
+        return 0, 0, 0
+    else
+        local seconds = mod(duration, 60);
+        local fullMinutes = (duration - seconds) / 60
+        local minutes = mod(fullMinutes, 60)
+        local hours = (fullMinutes - minutes) / 60
+        return hours, minutes, seconds
+    end
+end
+
+local function formatDuration(hours, minutes, seconds)
+    if hours == 0
+    then
+        return string.format("%02d:%02d", minutes, seconds)
+    else
+        return string.format("%02d:%02d:%02d", hours, minutes, seconds)
     end
 end
 
 --
--- Timing
+-- Functions
 --
+local function setText(text)
+    if ldb then
+        local dataObject = ldb:GetDataObjectByName("Broker_CombatTime")
+        if dataObject then
+            dataObject.text = string.format("|cff%02x%02x%02x%s|r", colorRed, colorGreen, colorBlue, text)
+        end
+    end
+end
 
-function BrokerCombatTimeUpdateText(elapsed)
+
+local function onUpdate(self, elapsed)
+    if not inCombat then
+        return
+    end
+
     if elapsed
     then -- optimize away unnecessary updates
-        elapsed_time = elapsed_time + elapsed
-        if elapsed_time < 0.25
+        accumulatedElapsedTime = accumulatedElapsedTime + elapsed
+        if accumulatedElapsedTime < 0.5
         then
             return
         end
     else
-        elapsed_time = 0.0
-    end
-    local total_time = GetTime() - start_time;
-    local hour = min(floor(total_time*SEC_TO_HOUR_FACTOR), 99);
-    local minute = mod(total_time*SEC_TO_MINUTE_FACTOR, 60);
-    local second = mod(total_time, 60);
-
-    local status
-    if hour == 0
-    then
-        status = string.format("%02d:%02d", minute, second)
-    else
-        status = string.format("%02d:%02d:%02d", hour, minute, second)
+        accumulatedElapsedTime = 0.0
     end
 
-    debug(status)
+    local duration = GetTime() - startTimestamp
+    local text = formatDuration(splitDuration(duration))
 
-    if LDBo then
-        LDBo.text = string.format("ct: |cff%02x%02x%02x%s|r", color_red*255, color_green*255, color_blue*255, status)
+    debug(text)
+    setText(inCombatPrefix..text)
+end
+
+local function onEnterCombat()
+    inCombat = true
+    startTimestamp = GetTime()
+    debug("Entering combat at " .. date("%H:%M:%S"))
+    hiddenFrame:SetScript("OnUpdate", onUpdate);
+    onUpdate();
+end
+
+local function onExitCombat()
+    inCombat = false
+    local duration = GetTime() - startTimestamp
+    local durationText = formatDuration(splitDuration(duration))
+    local message = "Exiting combat after "..durationText
+
+    if reportLongCombatThresholdSeconds and duration > reportLongCombatThresholdSeconds then
+        out(message)
     end
-end
 
-function BrokerCombatTimeOnUpdate(self, elapsed)
-    BrokerCombatTimeUpdateText(elapsed);
-end
+    debug(message)
 
-function BrokerCombatTimeOnEventEnterCombat()
-    combatzone = GetRealZoneText()
-    debug("Entering combat in "..combatzone)
-	-- start the timer
-	start_time = GetTime()
-    hiddenFrame:SetScript("OnUpdate", BrokerCombatTimeOnUpdate);
-    BrokerCombatTimeUpdateText();
-end
+    setText(outOfCombatText)
 
-function BrokerCombatTimeOnEventExitCombat()
-    debug("Exiting combat")
     hiddenFrame:SetScript("OnUpdate", nil);
-	BrokerCombatTimeUpdateText()
 end
 
 
---
--- Broker
---
+local function onAddonLoaded(addon)
+    if addon ~= addonName then return end
 
-
-local function BrokerCombatTimeSetupLDB()
-    if LDB
-    then -- LDBo is already initialized
-        return
-    end
-
-    if AceLibrary and AceLibrary:HasInstance("LibDataBroker-1.1")
-    then
-        LDB = AceLibrary("LibDataBroker-1.1")
-    elseif LibStub
-    then
-        LDB = LibStub:GetLibrary("LibDataBroker-1.1",true)
-    end
-
-    -- initialize LDBo if LDP has been initialized
-    if LDB
-    then
-        debug("Registering LDBo")
-        LDBo = LDB:NewDataObject("CombatTime",
-            {
-                type = "data source",
-                text = string.format("ct: |cff%02x%02x%02x00:00|r", color_red*255, color_green*255, color_blue*255),
-                label = "CombatTime",
-                icon = "Interface\\Icons\\Ability_DualWield",
-                OnTooltipShow =
-                    function(tooltip)
-                        if tooltip and tooltip.AddLine
-                        then
-                                tooltip:SetText("CombatTime")
-                                tooltip:Show()
-                        end
-                    end
-            }
-        )
-   end
-end
-
---
--- Event listener
---
-
-function BrokerCombatTimeOnEvent(frame, event)
-    if event == "PLAYER_REGEN_ENABLED"
-    then
-        -- This event is called when the player exits combat
-        debug("PLAYER_REGEN_ENABLED")
-        BrokerCombatTimeOnEventExitCombat()
-    elseif event == "PLAYER_REGEN_DISABLED"
-    then
-        -- This event is called when we enter combat
-        debug("PLAYER_REGEN_DISABLED")
-        BrokerCombatTimeOnEventEnterCombat()
-    elseif event == "ADDON_LOADED"
-    then
-        debug("ADDON_LOADED")
-        BrokerCombatTimeSetupLDB()
+    local success, result = pcall(function()
+        return LibStub("LibDataBroker-1.1")
+    end)
+    if success and result then
+        ldb = result
+        ldb:NewDataObject("Broker_CombatTime", {
+            type = "data source",
+            icon = "Interface\\Icons\\Ability_DualWield",
+            text = string.format("|cff%02x%02x%02x%s|r", colorRed, colorGreen, colorBlue, outOfCombatText),
+            label = "CombatTime",
+        })
     end
 end
 
-hiddenFrame:SetScript("OnEvent", BrokerCombatTimeOnEvent)
+local function main()
+    hiddenFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
+    hiddenFrame:RegisterEvent("PLAYER_REGEN_DISABLED")
+    hiddenFrame:RegisterEvent("ADDON_LOADED");
+
+    hiddenFrame:SetScript("OnEvent", function(self, event, addon)
+        if event == "PLAYER_REGEN_ENABLED"
+        then
+            -- This event is called when the player exits combat
+            debug("PLAYER_REGEN_ENABLED")
+            onExitCombat()
+        elseif event == "PLAYER_REGEN_DISABLED"
+        then
+            -- This event is called when we enter combat
+            debug("PLAYER_REGEN_DISABLED")
+            onEnterCombat()
+        elseif event == "ADDON_LOADED"
+        then
+            debug("ADDON_LOADED")
+            onAddonLoaded(addon)
+        end
+    end)
+end
+
+main()
