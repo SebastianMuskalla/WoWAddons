@@ -1,6 +1,6 @@
-## Interface: 120000
+## Interface: 120005
 ## Title: Broker_CombatTime
-## Version: 1.0
+## Version: 1.1.0
 ## Author: Sebastian Muskalla
 ## Notes: Shows time in combat.
 ## SavedVariables: BrokerCombatTime

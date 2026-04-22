@@ -1,6 +1,6 @@
-## Interface: 120000
+## Interface: 120005
 ## Title: Broker_RaidCount
-## Version: 1.0
+## Version: 1.1.0
 ## Author: Sebastian Muskalla
 ## Notes: Shows the raid member / role count
 ## SavedVariables: BrokerRaidCount
