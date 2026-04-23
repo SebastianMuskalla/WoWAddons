@@ -7,22 +7,31 @@ The addons are coded in LUA and rely on the WoW API.
 License
 -------
 
-Copyright 2019-2022 Sebastian Muskalla
+Copyright 2019-2026 Sebastian Muskalla
 
 This project contains free and open-source software licensed under the MIT License, see [LICENSE](LICENSE)
 
-Addons updated for WoW Midnight (Patch 12.x.y)
+Addons updated for WoW Midnight (Patch 12.0.5)
 ----------------------------------------------
 
-### Broker_CombatTime
+### Broker_CombatTime_MoveSpeed
 
-Broker_CombatTime is a broker plugin (using LBD - Lib Data Broker) whose output can be displayed using a suitable addon like Bazooka (<https://www.curseforge.com/wow/addons/bazooka>).
+Broker_CombatTime_MoveSpeed is a broker plugin (using LBD - Lib Data Broker) whose output can be displayed using a suitable addon like Bazooka (<https://www.curseforge.com/wow/addons/bazooka>).
 
-It simply tracks the amount of time you have been in combat with your current enemy and is helpful to track events during boss fights.
+While in combat, it shows the time you have been in combat.
+After leaving a long combat (> 60 seconds, configurable via LUA), it reports the combat duration to your chat frame.
 
-Broker_CombatTime was written as a replacement for the deprecated addon CombatTime by oscarucb (<https://www.curseforge.com/wow/addons/combattime>).
+While out of combat, it shows your current movement speed.
 
-The addon works out of the box, no configuration is needed, but if you want, some settings can be adjusted at the beginning of [Broker_CombatTime.lua](Broker_CombatTime/Broker_CombatTime.lua).
+Broker_CombatTime_MoveSpeed was written as a replacement for the deprecated addon CombatTime by oscarucb (<https://www.curseforge.com/wow/addons/combattime>).
+
+The addon works out of the box, no configuration is needed, but if you want, some settings can be adjusted at the beginning of [Broker_CombatTime_MoveSpeed.lua](Broker_CombatTime_MoveSpeed/Broker_CombatTime_MoveSpeed.lua).
+
+#### Why would I want this?
+
+With patch 12.0.5, the movement speed while in combat has been turned into a secret value, meaning it cannot be accessed by addons.
+Hence, it makes sense to report either the combat time (which is obviously only relevant while in combat) or the movement speed (which is not accessible while in combat).
+
 
 ### Broker_RaidCount
 
@@ -85,3 +94,14 @@ It tracks your current movement speed, displayed as a percentage of your normal 
 Broker_MovementSpeed was written as a replacement for the deprecated addon Titan Vector (<https://www.curseforge.com/wow/addons/titan-vector>)
 
 No configuration needed!
+
+
+### Broker_CombatTime
+
+Broker_CombatTime is a broker plugin (using LBD - Lib Data Broker) whose output can be displayed using a suitable addon like Bazooka (<https://www.curseforge.com/wow/addons/bazooka>).
+
+It simply tracks the amount of time you have been in combat with your current enemy and is helpful to track events during boss fights.
+
+Broker_CombatTime was written as a replacement for the deprecated addon CombatTime by oscarucb (<https://www.curseforge.com/wow/addons/combattime>).
+
+The addon works out of the box, no configuration is needed, but if you want, some settings can be adjusted at the beginning of [Broker_CombatTime.lua](Broker_CombatTime/Broker_CombatTime.lua).
